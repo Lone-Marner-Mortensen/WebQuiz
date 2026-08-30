@@ -33,20 +33,20 @@ This is a backend application providing:
 
 ### Technology Stack
 
-| Layer | Technology |
-|-------|------------|
-| Language | Kotlin 2.2.20 |
-| Framework | Spring Boot 4.1 |
-| JDK | Java 21 |
-| Database | PostgreSQL 16, via Docker Compose |
-| Schema migrations | Flyway |
-| ORM | Hibernate JPA (schema-validated against Flyway, not auto-generated) |
-| Security | Spring Security — HTTP Basic, BCrypt |
-| API docs | springdoc-openapi (Swagger UI) |
-| Object mapping | MapStruct |
-| Monitoring | Spring Boot Actuator |
-| Build | Gradle (wrapper included) |
-| Testing | Testcontainers (real Postgres in integration tests) |
+| Layer                           | Technology |
+|---------------------------------|------------|
+| Language                        | Kotlin 2.2.20 |
+| Framework                       | Spring Boot 4.1 |
+| JDK                             | Java 21 |
+| Database                        | PostgreSQL 16, via Docker Compose |
+| Schema migrations               | Flyway |
+| ORM (Object Relational Mapping) | Hibernate JPA (schema-validated against Flyway, not auto-generated) |
+| Security                        | Spring Security — HTTP Basic, BCrypt |
+| API docs                        | springdoc-openapi (Swagger UI) |
+| Object mapping                  | MapStruct |
+| Monitoring                      | Spring Boot Actuator |
+| Build                           | Gradle (wrapper included) |
+| Testing                         | Testcontainers (real Postgres in integration tests) |
 
 ### Security
 
@@ -83,19 +83,15 @@ Most failures return a JSON body via `GlobalExceptionHandler`:
 
 `401 Unauthorized` is the one exception — it's returned by Spring Security before the request reaches a controller, so it has no JSON body.
 
-## How to Build, Run and Stop
+
 
 ### Prerequisites
 
 - JDK 21 or later
-- Docker (for the Postgres container)
+- Docker Desktop or Docker Engine (must be up to start the app)
+- Gradle wrapper (bundled with the repo)
 
-### Build
-
-```bash
-./gradlew build
-```
-
+## Getting started
 ### Run
 
 Start Postgres and the app together with one command:
@@ -111,7 +107,7 @@ This runs `docker compose up -d` followed by `./gradlew bootRun`. The server sta
 Stop the app with `Ctrl+C`, then stop and remove the Postgres container:
 
 ```bash
-./gradlew stop
+./gradlew stop-db
 ```
 
 ### Configuration
@@ -123,9 +119,7 @@ Key settings in `src/main/resources/application.properties`:
 | Server port | `8080` |
 | Actuator endpoints | `health`, `info` |
 
-Datasource connection details are not configured here — `spring-boot-docker-compose` supplies them automatically from the running `compose.yaml` Postgres service.
-
-Quiz creation accepts 1–7 questions, each with 2–10 non-blank options. A user's successful completion is recorded once per quiz; repeated successful submissions still return success without creating duplicate history entries.
+Datasource connection details are not configured here — `spring-boot-docker-compose` supplies them automatically from `compose.yaml`.
 
 ## Example Usage
 
@@ -142,12 +136,12 @@ curl -X POST http://localhost:8080/api/quizzes \
   -u user@example.com:secret123 \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Kotlin basics",
+    "title": "Geography",
     "questions": [
       {
-        "text": "What is a data class?",
-        "options": ["A mutable class", "An immutable class with generated equals/hashCode", "An abstract class", "An interface"],
-        "answer": 1
+        "text": "Capital of France?",
+        "options": ["Paris", "Berlin"],
+        "answer": 0
       }
     ]
   }'
@@ -158,7 +152,7 @@ curl -X POST http://localhost:8080/api/quizzes \
 curl -X POST http://localhost:8080/api/quizzes/{id}/solve \
   -u user@example.com:secret123 \
   -H "Content-Type: application/json" \
-  -d '{"answers": [1]}'
+  -d '{"answers": [0]}'
 ```
 
 **Get completion history:**
