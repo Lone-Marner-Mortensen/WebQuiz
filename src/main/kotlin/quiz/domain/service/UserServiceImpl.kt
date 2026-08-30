@@ -2,13 +2,14 @@ package quiz.domain.service
 
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+import quiz.domain.IdGenerator
 import quiz.domain.exception.DuplicateEmailException
-import quiz.domain.User
-import quiz.domain.createId
+import quiz.domain.model.User
 import quiz.domain.repository.UserRepository
 
 @Service
 class UserServiceImpl(
+    private val idGenerator: IdGenerator,
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder
 ) : UserService {
@@ -19,9 +20,9 @@ class UserServiceImpl(
         }
         userRepository.save(
             User(
-                id = createId(),
+                id = idGenerator.createId(),
                 email = email,
-                password = passwordEncoder.encode(rawPassword) ?: ""
+                password = passwordEncoder.encode(rawPassword) ?: throw IllegalArgumentException("Password is null")
             )
         )
     }

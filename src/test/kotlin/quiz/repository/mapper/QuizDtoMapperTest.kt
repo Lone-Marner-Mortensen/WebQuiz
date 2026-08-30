@@ -2,34 +2,34 @@ package quiz.repository.mapper
 
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
-import quiz.domain.Question
-import quiz.domain.Quiz
-import quiz.repository.dto.QuestionDto
-import quiz.repository.dto.QuizDto
+import quiz.domain.IdGenerator
+import quiz.domain.model.Question
+import quiz.domain.model.Quiz
+import quiz.repository.entity.QuestionEntity
+import quiz.repository.entity.QuizEntity
 import java.time.OffsetDateTime
-
-
-//
-//
-// NOT READY FOR REVIEW
-//
-//
-//
+import java.util.UUID
 
 class QuizDtoMapperTest {
 
-    private val mapper: QuizDtoMapper = QuizDtoMapperImpl(QuestionDtoMapperImpl())
+    private val fakeIdGenerator = object : IdGenerator {
+        override fun createId(): String = UUID.randomUUID().toString()
+    }
+    private val mapper: QuizDtoMapper = QuizDtoMapperImpl(QuestionDtoMapperImpl()).apply {
+        idGenerator = fakeIdGenerator
+    }
 
     @Test
     fun `toDto generates a distinct id per question and preserves order`() {
         val quiz = Quiz(
             id = "quiz-1",
             title = "Geography",
-            author = "author@example.com",
+            authorId = "author@example.com",
             questions = listOf(
                 Question(text = "Q1", options = listOf("a", "b"), answer = 0),
                 Question(text = "Q2", options = listOf("c", "d"), answer = 1)
-            )
+            ),
+            createdAt = OffsetDateTime.now()
         )
 
         val dto = mapper.toDto(quiz)
@@ -38,18 +38,17 @@ class QuizDtoMapperTest {
         assertEquals("Q1", dto.questions[0].text)
         assertEquals("Q2", dto.questions[1].text)
         assertEquals(2, dto.questions.map { it.id }.toSet().size)
-        dto.questions.forEach { assertEquals(dto, it.quiz) }
     }
 
     @Test
     fun `toDomain drops question id and preserves order`() {
-        val quizDto = QuizDto(
+        val quizDto = QuizEntity(
             id = "quiz-1",
             title = "Geography",
-            author = "author@example.com",
+            authorId = "author@example.com",
             questions = listOf(
-                QuestionDto(id = "q1", text = "Q1", options = listOf("a", "b"), answer = 0, quiz = null),
-                QuestionDto(id = "q2", text = "Q2", options = listOf("c", "d"), answer = 1, quiz = null)
+                QuestionEntity(id = "q1", text = "Q1", options = listOf("a", "b"), answer = 0),
+                QuestionEntity(id = "q2", text = "Q2", options = listOf("c", "d"), answer = 1)
             ),
             createdAt = OffsetDateTime.now()
         )

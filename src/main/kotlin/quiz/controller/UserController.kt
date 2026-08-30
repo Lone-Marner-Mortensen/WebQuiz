@@ -19,7 +19,7 @@ class UserController(private val userService: UserService) {
     )
     @PostMapping("/api/register")
     fun register(@Valid @RequestBody request: RegisterRequestDto): ResponseEntity<Void> {
-        userService.registerUser(request.email ?: "", request.password ?: "")
+        userService.registerUser(request.email, request.password)
         return ResponseEntity.ok().build()
     }
 }

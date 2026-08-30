@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import quiz.domain.exception.DuplicateEmailException
 import quiz.domain.exception.InvalidAnswerException
+import quiz.domain.exception.InvalidQuizException
 import quiz.domain.exception.QuizAuthorMismatchException
 import quiz.domain.exception.QuizNotFoundException
 
@@ -47,6 +48,11 @@ class GlobalExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST, "INVALID_ANSWER", ex.message ?: "Invalid answer")
     }
 
+    @ExceptionHandler(InvalidQuizException::class)
+    fun handleInvalidQuiz(ex: InvalidQuizException): ResponseEntity<ErrorResponse> {
+        return buildError(HttpStatus.BAD_REQUEST, "INVALID_QUIZ", ex.message ?: "Invalid quiz")
+    }
+
     @ExceptionHandler(QuizAuthorMismatchException::class)
     fun handleQuizAuthorMismatch(ex: QuizAuthorMismatchException): ResponseEntity<ErrorResponse> {
         return buildError(HttpStatus.FORBIDDEN, "QUIZ_AUTHOR_MISMATCH", ex.message ?: "Requester is not the quiz author")
@@ -55,7 +61,7 @@ class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleIllegalArgument(ex: IllegalArgumentException, request: HttpServletRequest): ResponseEntity<ErrorResponse> {
         logger.warn("Invalid argument on {} {}", request.method, request.requestURI, ex)
-        return buildError(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "Invalid request")
+        return buildError(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", ex.message ?: "Invalid request")
     }
 
     @ExceptionHandler(DataIntegrityViolationException::class)

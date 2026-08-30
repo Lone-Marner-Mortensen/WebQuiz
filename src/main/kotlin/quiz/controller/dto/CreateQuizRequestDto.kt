@@ -12,7 +12,6 @@ data class CreateQuizRequestDto(
     val title: String,
 
     @field:NotNull
-    @field:Size(min = 1, max = 7, message = "Quiz must have at least 1 and at most 7 questions")
     @field:Valid
     val questions: List<QuestionRequestDto>
 )

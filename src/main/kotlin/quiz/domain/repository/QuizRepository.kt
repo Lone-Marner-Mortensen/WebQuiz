@@ -1,7 +1,7 @@
 package quiz.domain.repository
 
 import quiz.domain.response.PagedResult
-import quiz.domain.Quiz
+import quiz.domain.model.Quiz
 
 interface QuizRepository {
     fun save(quiz: Quiz): Quiz

@@ -1,9 +1,9 @@
 package quiz.repository
 
 import org.springframework.stereotype.Repository
-import quiz.domain.User
+import quiz.domain.model.User
 import quiz.domain.repository.UserRepository
-import quiz.repository.jpa.adapters.UserEntityRepository
+import quiz.repository.jpa.adapter.UserEntityRepository
 import quiz.repository.mapper.UserDtoMapper
 
 @Repository
@@ -12,15 +12,14 @@ class UserRepositoryImpl(
     private val mapper: UserDtoMapper
 ) : UserRepository {
 
-    override fun save(user: User): User {
-        return mapper.toDomain(jpaRepository.save(mapper.toDto(user)))
-    }
+    override fun save(user: User): User =
+        mapper.toDto(user)
+            .let(jpaRepository::save)
+            .let(mapper::toDomain)
 
-    override fun findByEmail(email: String): User? {
-        return jpaRepository.findByEmail(email)?.let { mapper.toDomain(it) }
-    }
+    override fun findByEmail(email: String): User? =
+        jpaRepository.findByEmail(email)?.let(mapper::toDomain)
 
-    override fun existsByEmail(email: String): Boolean {
-        return jpaRepository.existsByEmail(email)
-    }
+    override fun existsByEmail(email: String): Boolean =
+        jpaRepository.existsByEmail(email)
 }

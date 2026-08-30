@@ -1,4 +1,4 @@
-package quiz.repository.dto
+package quiz.repository.entity
 
 import jakarta.persistence.CollectionTable
 import jakarta.persistence.Column
@@ -8,13 +8,14 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OrderColumn
 import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 
 @Entity
 @Table(name = "questions")
-class QuestionDto(
+class QuestionEntity(
     @Id
     val id: String,
 
@@ -23,6 +24,7 @@ class QuestionDto(
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "question_options", joinColumns = [JoinColumn(name = "question_id")])
+    @OrderColumn(name = "option_order")
     @Column(name = "option_value", nullable = false)
     @Fetch(value = FetchMode.SUBSELECT)
     val options: List<String>,
@@ -30,7 +32,10 @@ class QuestionDto(
     @Column(nullable = false)
     val answer: Int,
 
-    @ManyToOne
-    @JoinColumn(name = "quiz_id")
-    var quiz: QuizDto?
+    @Column(name = "question_order", nullable = false)
+    val questionOrder: Int = 0,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "quiz_id", nullable = false)
+    var quiz: QuizEntity? = null
 )

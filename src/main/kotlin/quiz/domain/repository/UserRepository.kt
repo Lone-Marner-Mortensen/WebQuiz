@@ -1,6 +1,6 @@
 package quiz.domain.repository
 
-import quiz.domain.User
+import quiz.domain.model.User
 
 interface UserRepository {
     fun save(user: User): User

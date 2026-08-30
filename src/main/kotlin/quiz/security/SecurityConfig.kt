@@ -33,7 +33,6 @@ class SecurityConfig(private val userDetailsService: UserDetailsServiceAdapter) 
             .authorizeHttpRequests {
                 it.requestMatchers(
                     "/api/register",
-                    "/actuator/shutdown",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/v3/api-docs/**"

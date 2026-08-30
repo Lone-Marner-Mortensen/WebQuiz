@@ -1,4 +1,4 @@
-package quiz.domain
+package quiz.domain.model
 
 data class User(
     val id: String,

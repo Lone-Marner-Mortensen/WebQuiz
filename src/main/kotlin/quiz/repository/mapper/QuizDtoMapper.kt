@@ -2,36 +2,44 @@ package quiz.repository.mapper
 
 import org.mapstruct.InjectionStrategy
 import org.mapstruct.Mapper
-import quiz.domain.Question
-import quiz.domain.Quiz
-import quiz.domain.createId
-import quiz.repository.dto.QuestionDto
-import quiz.repository.dto.QuizDto
+import org.springframework.beans.factory.annotation.Autowired
+import quiz.domain.IdGenerator
+import quiz.domain.model.Question
+import quiz.domain.model.Quiz
+import quiz.repository.entity.QuestionEntity
+import quiz.repository.entity.QuizEntity
+import java.time.OffsetDateTime
 
 @Mapper(componentModel = "spring", uses = [QuestionDtoMapper::class], injectionStrategy = InjectionStrategy.CONSTRUCTOR)
-interface QuizDtoMapper {
+abstract class QuizDtoMapper {
 
-    fun toDomain(dto: QuizDto): Quiz
+    @Autowired
+    lateinit var idGenerator: IdGenerator
 
-    fun toDto(domain: Quiz): QuizDto {
-        val quizDto = QuizDto(
+    abstract fun toDomain(dto: QuizEntity): Quiz
+
+    fun toDto(domain: Quiz): QuizEntity {
+        val quizDto = QuizEntity(
             id = domain.id,
             title = domain.title,
-            author = domain.author,
-            questions = domain.questions.map { toQuestionDto(it, quiz = null) },
+            authorId = domain.authorId,
+            questions = emptyList(),
             createdAt = domain.createdAt
         )
-        quizDto.questions.forEach { it.quiz = quizDto }
+
+        quizDto.questions = domain.questions.mapIndexed { index, question ->
+            toQuestionDto(question, index).also { it.quiz = quizDto }
+        }
+
         return quizDto
     }
 
-    private fun toQuestionDto(question: Question, quiz: QuizDto?): QuestionDto {
-        return QuestionDto(
-            id = createId(),
+    private fun toQuestionDto(question: Question, questionOrder: Int): QuestionEntity =
+        QuestionEntity(
+            id = idGenerator.createId(),
             text = question.text,
             options = question.options,
             answer = question.answer,
-            quiz = quiz
+            questionOrder = questionOrder,
         )
-    }
 }

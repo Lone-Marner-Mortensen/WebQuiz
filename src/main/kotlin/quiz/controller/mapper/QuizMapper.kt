@@ -1,13 +1,13 @@
 package quiz.controller.mapper
 
 import org.mapstruct.Mapper
+import quiz.controller.dto.CreateQuizResponseDto
 import quiz.controller.dto.QuestionResponseDto
-import quiz.controller.dto.QuizResponseDto
-import quiz.domain.Question
-import quiz.domain.Quiz
+import quiz.domain.model.Question
+import quiz.domain.model.Quiz
 
 @Mapper(componentModel = "spring")
 interface QuizMapper {
-    fun toResponseDto(domain: Quiz): QuizResponseDto
+    fun toResponseDto(domain: Quiz): CreateQuizResponseDto
     fun toResponseDto(domain: Question): QuestionResponseDto
 }

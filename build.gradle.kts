@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.spring") version "2.2.20"
     id("org.jetbrains.kotlin.plugin.jpa") version "2.2.20"
     id("org.jetbrains.kotlin.kapt") version "2.2.20"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.20"
 }
 
 group = "org.example"
@@ -41,6 +42,7 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter:1.20.4")
     testImplementation("io.mockk:mockk:1.13.12")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -62,11 +64,6 @@ val composeDown = tasks.register<Exec>("composeDown") {
     commandLine("docker", "compose", "down")
 }
 
-val killApp = tasks.register<Exec>("killApp") {
-    commandLine("pkill", "-f", "quiz.WebQuizApplicationKt")
-    isIgnoreExitValue = true
-}
-
 tasks.named("bootRun") {
     mustRunAfter(composeUp)
 }
@@ -79,10 +76,6 @@ tasks.register("start") {
 
 tasks.register("stop") {
     group = "application"
-    description = "Stops the application (if running) and stops/removes the Postgres container."
-    dependsOn(killApp, composeDown)
-}
-
-tasks.named("composeDown") {
-    mustRunAfter(killApp)
+    description = "Stops and removes the Postgres container. Stop the application with Ctrl+C."
+    dependsOn(composeDown)
 }

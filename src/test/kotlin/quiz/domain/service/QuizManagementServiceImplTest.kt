@@ -6,40 +6,48 @@ import io.mockk.verify
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import quiz.domain.Question
-import quiz.domain.Quiz
-import quiz.domain.exception.InvalidAnswerException
+import quiz.domain.model.Question
+import quiz.domain.model.Quiz
+import quiz.domain.Clock
+import quiz.domain.IdGenerator
+import quiz.domain.exception.InvalidQuizException
 import quiz.domain.exception.QuizAuthorMismatchException
 import quiz.domain.exception.QuizNotFoundException
-import quiz.domain.repository.QuizCompletionRepository
 import quiz.domain.repository.QuizRepository
+import java.time.OffsetDateTime
 
-class QuizServiceImplTest {
+class QuizManagementServiceImplTest {
 
+    private val idGenerator: IdGenerator = mockk {
+        every { createId() } returns "generated-id"
+    }
+    private val clock: Clock = mockk {
+        every { now() } returns OffsetDateTime.now()
+    }
     private val quizRepository: QuizRepository = mockk()
-    private val quizCompletionRepository: QuizCompletionRepository = mockk()
-    private val service = QuizServiceImpl(quizRepository, quizCompletionRepository)
+    private val service = QuizManagementServiceImpl(idGenerator, clock, quizRepository)
 
     private val twoQuestionQuiz = Quiz(
         id = "quiz-1",
         title = "Geography",
-        author = "author@example.com",
+        authorId = "authorId@example.com",
         questions = listOf(
             Question(text = "Capital of France?", options = listOf("Paris", "Berlin"), answer = 0),
             Question(text = "Capital of Germany?", options = listOf("Paris", "Berlin"), answer = 1)
-        )
+        ),
+        createdAt = OffsetDateTime.now()
     )
 
     @Test
     fun `createQuiz rejects an empty question list`() {
-        assertFailsWith<InvalidAnswerException> {
+        assertFailsWith<InvalidQuizException> {
             service.createQuiz(title = "Empty", author = "a@example.com", questions = emptyList())
         }
     }
 
     @Test
     fun `createQuiz rejects a question with fewer than 2 options`() {
-        assertFailsWith<InvalidAnswerException> {
+        assertFailsWith<InvalidQuizException> {
             service.createQuiz(
                 title = "Bad",
                 author = "a@example.com",
@@ -50,7 +58,7 @@ class QuizServiceImplTest {
 
     @Test
     fun `createQuiz rejects an out-of-range answer index`() {
-        assertFailsWith<InvalidAnswerException> {
+        assertFailsWith<InvalidQuizException> {
             service.createQuiz(
                 title = "Bad",
                 author = "a@example.com",
@@ -65,7 +73,7 @@ class QuizServiceImplTest {
 
         val result = service.createQuiz(
             title = "Geography",
-            author = "author@example.com",
+            author = "authorId@example.com",
             questions = listOf(
                 QuestionDraft(text = "Capital of France?", options = listOf("Paris", "Berlin"), answer = 0),
                 QuestionDraft(text = "Capital of Germany?", options = listOf("Paris", "Berlin"), answer = 1)
@@ -85,45 +93,6 @@ class QuizServiceImplTest {
     }
 
     @Test
-    fun `solveQuiz succeeds and records completion when every answer is correct`() {
-        every { quizRepository.findById("quiz-1") } returns twoQuestionQuiz
-        every { quizCompletionRepository.save(any()) } answers { firstArg() }
-
-        val result = service.solveQuiz("quiz-1", listOf(0, 1), "solver@example.com")
-
-        assertEquals(true, result.success)
-        verify { quizCompletionRepository.save(any()) }
-    }
-
-    @Test
-    fun `solveQuiz fails when any single answer is wrong, and records no completion`() {
-        every { quizRepository.findById("quiz-1") } returns twoQuestionQuiz
-
-        val result = service.solveQuiz("quiz-1", listOf(0, 0), "solver@example.com")
-
-        assertEquals(false, result.success)
-        verify(exactly = 0) { quizCompletionRepository.save(any()) }
-    }
-
-    @Test
-    fun `solveQuiz throws InvalidAnswerException when answer count does not match question count`() {
-        every { quizRepository.findById("quiz-1") } returns twoQuestionQuiz
-
-        assertFailsWith<InvalidAnswerException> {
-            service.solveQuiz("quiz-1", listOf(0), "solver@example.com")
-        }
-    }
-
-    @Test
-    fun `solveQuiz throws QuizNotFoundException when quiz does not exist`() {
-        every { quizRepository.findById("missing") } returns null
-
-        assertFailsWith<QuizNotFoundException> {
-            service.solveQuiz("missing", listOf(0), "solver@example.com")
-        }
-    }
-
-    @Test
     fun `deleteQuiz throws QuizNotFoundException when quiz does not exist`() {
         every { quizRepository.findById("missing") } returns null
 
@@ -137,7 +106,7 @@ class QuizServiceImplTest {
         every { quizRepository.findById("quiz-1") } returns twoQuestionQuiz
 
         assertFailsWith<QuizAuthorMismatchException> {
-            service.deleteQuiz("quiz-1", "not-the-author@example.com")
+            service.deleteQuiz("quiz-1", "not-the-authorId@example.com")
         }
         verify(exactly = 0) { quizRepository.deleteById(any()) }
     }

@@ -3,13 +3,6 @@ package quiz.testsupport
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 
-//
-//
-// NOT READY FOR REVIEW
-//
-//
-//
-
 abstract class AbstractPostgresIntegrationTest {
 
     companion object {

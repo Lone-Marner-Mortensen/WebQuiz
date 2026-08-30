@@ -1,10 +1,11 @@
-package quiz.repository.dto
+package quiz.repository.entity
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OrderColumn
 import jakarta.persistence.Table
@@ -14,20 +15,20 @@ import java.time.OffsetDateTime
 
 @Entity
 @Table(name = "quizzes")
-class QuizDto(
+class QuizEntity(
     @Id
     val id: String,
 
     @Column(nullable = false)
     val title: String,
 
-    @Column(nullable = false)
-    val author: String,
+    @Column(name = "author_id", nullable = false)
+    val authorId: String,
 
-    @OneToMany(mappedBy = "quiz", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "quiz", cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE], fetch = FetchType.EAGER)
     @OrderColumn(name = "question_order")
     @Fetch(value = FetchMode.SUBSELECT)
-    val questions: List<QuestionDto>,
+    var questions: List<QuestionEntity> = emptyList(),
 
     @Column(nullable = false)
     val createdAt: OffsetDateTime

@@ -1,4 +1,4 @@
-package quiz.repository.dto
+package quiz.repository.entity
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -7,7 +7,7 @@ import jakarta.persistence.Table
 
 @Entity
 @Table(name = "users")
-class UserDto(
+class UserEntity(
     @Id
     val id: String,
 
@@ -15,5 +15,5 @@ class UserDto(
     val email: String,
 
     @Column(nullable = false)
-    var password: String
+    val password: String
 )

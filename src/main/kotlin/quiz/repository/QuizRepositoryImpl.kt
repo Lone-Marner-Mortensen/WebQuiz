@@ -3,9 +3,9 @@ package quiz.repository
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Repository
 import quiz.domain.response.PagedResult
-import quiz.domain.Quiz
+import quiz.domain.model.Quiz
 import quiz.domain.repository.QuizRepository
-import quiz.repository.jpa.adapters.QuizEntityRepository
+import quiz.repository.jpa.adapter.QuizEntityRepository
 import quiz.repository.mapper.QuizDtoMapper
 import quiz.repository.mapper.toPagedResult
 
@@ -15,21 +15,21 @@ class QuizRepositoryImpl(
     private val mapper: QuizDtoMapper
 ) : QuizRepository {
 
-    override fun save(quiz: Quiz): Quiz {
-        return mapper.toDomain(jpaRepository.save(mapper.toDto(quiz)))
-    }
+    override fun save(quiz: Quiz): Quiz =
+        mapper.toDto(quiz)
+            .let(jpaRepository::save)
+            .let(mapper::toDomain)
 
-    override fun findById(id: String): Quiz? {
-        return jpaRepository.findById(id).map { mapper.toDomain(it) }.orElse(null)
-    }
+    override fun findById(id: String): Quiz? =
+        jpaRepository.findById(id)
+            .map(mapper::toDomain)
+            .orElse(null)
 
-    override fun findAll(pageNumber: Int, pageSize: Int): PagedResult<Quiz> {
-        return jpaRepository.findAllByOrderByCreatedAt(PageRequest.of(pageNumber, pageSize))
-            .map { mapper.toDomain(it) }
+    override fun findAll(pageNumber: Int, pageSize: Int): PagedResult<Quiz> =
+        jpaRepository.findAllByOrderByCreatedAt(PageRequest.of(pageNumber, pageSize))
+            .map(mapper::toDomain)
             .toPagedResult()
-    }
 
-    override fun deleteById(id: String) {
+    override fun deleteById(id: String) =
         jpaRepository.deleteById(id)
-    }
 }

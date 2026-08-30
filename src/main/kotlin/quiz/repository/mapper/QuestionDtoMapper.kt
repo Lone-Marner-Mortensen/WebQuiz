@@ -1,10 +1,10 @@
 package quiz.repository.mapper
 
 import org.mapstruct.Mapper
-import quiz.domain.Question
-import quiz.repository.dto.QuestionDto
+import quiz.domain.model.Question
+import quiz.repository.entity.QuestionEntity
 
 @Mapper(componentModel = "spring")
 interface QuestionDtoMapper {
-    fun toDomain(dto: QuestionDto): Question
+    fun toDomain(dto: QuestionEntity): Question
 }

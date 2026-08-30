@@ -1,11 +1,9 @@
 package quiz.controller
 
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.ClassOrderer
 import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestClassOrder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.resttestclient.TestRestTemplate
@@ -15,27 +13,54 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
+import org.testcontainers.containers.PostgreSQLContainer
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.addJsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
+import org.junit.jupiter.api.assertNotNull
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import quiz.controller.dto.CreateQuizRequestDto
 import quiz.controller.dto.QuestionRequestDto
-import quiz.domain.User
-import quiz.domain.createId
+import quiz.domain.model.Question
+import quiz.domain.model.Quiz
+import quiz.domain.model.User
+import quiz.domain.repository.QuizRepository
 import quiz.domain.repository.UserRepository
-import quiz.testsupport.AbstractPostgresIntegrationTest
+import quiz.fakeservice.FakeIdGenerator
 import tools.jackson.databind.ObjectMapper
+import org.springframework.http.ResponseEntity
+import quiz.fakeservice.FakeClock
 
-//
-//
-// NOT READY FOR REVIEW
-//
-//
-//
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
-@TestClassOrder(ClassOrderer.OrderAnnotation::class)
-class PostCreateQuizIntegrationTest : AbstractPostgresIntegrationTest() {
+class PostCreateQuizIntegrationTest {
+
+    companion object {
+        private val postgres: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:16")
+            .withDatabaseName("webquiz")
+            .withUsername("webquiz")
+            .withPassword("webquiz")
+            .apply { start() }
+
+        @JvmStatic
+        @DynamicPropertySource
+        fun postgresProperties(registry: DynamicPropertyRegistry) {
+            registry.add("spring.datasource.url", postgres::getJdbcUrl)
+            registry.add("spring.datasource.username", postgres::getUsername)
+            registry.add("spring.datasource.password", postgres::getPassword)
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun tearDownContainer() {
+            postgres.stop()
+        }
+    }
 
     @Autowired
     private lateinit var restTemplate: TestRestTemplate
@@ -45,6 +70,15 @@ class PostCreateQuizIntegrationTest : AbstractPostgresIntegrationTest() {
 
     @Autowired
     private lateinit var passwordEncoder: PasswordEncoder
+
+    @Autowired
+    private lateinit var idGenerator: FakeIdGenerator
+
+    @Autowired
+    private lateinit var clock: FakeClock
+
+    @Autowired
+    private lateinit var quizRepository: QuizRepository
 
     private val objectMapper = ObjectMapper()
 
@@ -56,7 +90,7 @@ class PostCreateQuizIntegrationTest : AbstractPostgresIntegrationTest() {
         if (!userRepository.existsByEmail(email)) {
             userRepository.save(
                 User(
-                    id = createId(),
+                    id = idGenerator.createId(),
                     email = email,
                     password = passwordEncoder.encode(password) ?: error("Password encoding failed")
                 )
@@ -75,7 +109,7 @@ class PostCreateQuizIntegrationTest : AbstractPostgresIntegrationTest() {
         questions: List<QuestionRequestDto> = listOf(question())
     ): String = objectMapper.writeValueAsString(CreateQuizRequestDto(title, questions))
 
-    private fun post(body: String): org.springframework.http.ResponseEntity<String> {
+    private fun post(body: String): ResponseEntity<String> {
         val headers = HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON }
         val entity = HttpEntity(body, headers)
         return restTemplate
@@ -83,56 +117,69 @@ class PostCreateQuizIntegrationTest : AbstractPostgresIntegrationTest() {
             .postForEntity("/api/quizzes", entity, String::class.java)
     }
 
-    private fun postwithoutLogin(body: String): org.springframework.http.ResponseEntity<String> {
+    private fun postwithoutLogin(body: String): ResponseEntity<String> {
         val headers = HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON }
         val entity = HttpEntity(body, headers)
         return restTemplate.postForEntity("/api/quizzes", entity, String::class.java)
     }
 
+    private fun errorJson(status: Int, error: String, message: String): String =
+        buildJsonObject {
+            put("status", status)
+            put("error", error)
+            put("message", message)
+        }.toString()
+
+    private fun quizResponseJson(id: String, title: String, questions: List<QuestionRequestDto>, createdAt: String): String =
+        buildJsonObject {
+            put("id", id)
+            put("title", title)
+            putJsonArray("questions") {
+                questions.forEach { question ->
+                    addJsonObject {
+                        put("text", question.text)
+                        putJsonArray("options") { question.options.forEach { add(it) } }
+                        put("answer", question.answer)
+                    }
+                }
+            }
+            put("createdAt", createdAt)
+        }.toString()
+
+    private fun createdAtOf(body: String): String =
+        Regex(""""createdAt":"([^"]+)"""").find(body)?.groupValues?.get(1)
+            ?: error("createdAt not found in response body: $body")
+
     @Nested
-    @Order(1)
-    inner class `when the quiz is valid` {
+    inner class `given the quiz is valid` {
         @Test
-        fun `should create a single-question quiz`() {
-            val response = post(
-                quiz(
-                    title = "Geography",
-                    questions = listOf(question(text = "Capital of France?", options = listOf("Paris", "Berlin"), answer = 0))
-                )
-            )
+        fun `should save the quiz in quizRepository and return it as html-response`() {
+            // When
+            val id = idGenerator.id
+            val questions = listOf(question(text = "Capital of France?", options = listOf("Paris", "Berlin"), answer = 0))
 
+            // Then
+            val response = post(quiz(title = "Geography", questions = questions))
+
+            // Expect
             assertEquals(HttpStatus.OK, response.statusCode)
-            val body = response.body ?: error("Response body was null")
-            assertTrue(body.contains("\"title\":\"Geography\""))
-            assertTrue(body.contains("\"text\":\"Capital of France?\""))
-            assertTrue(body.contains("\"options\":[\"Paris\",\"Berlin\"]"))
-        }
+            val body = response.body
+            assertNotNull(body)
+            assertEquals(quizResponseJson(id, "Geography", questions, createdAtOf(body)), body)
 
-        @Test
-        fun `should create a multi-question quiz and preserve question order`() {
-            val response = post(
-                quiz(
-                    title = "Multi",
-                    questions = listOf(
-                        question(text = "Question A", options = listOf("a1", "a2"), answer = 0),
-                        question(text = "Question B", options = listOf("b1", "b2"), answer = 1),
-                        question(text = "Question C", options = listOf("c1", "c2"), answer = 0)
-                    )
-                )
+            val savedQuiz = quizRepository.findById(id)
+            assertNotNull(savedQuiz)
+            val expectedQuestions = questions.map { Question(text = it.text, options = it.options, answer = it.answer) }
+            val expectedAuthorId = userRepository.findByEmail(email)?.id ?: error("User should exist for email: $email")
+            assertEquals(
+                Quiz(id = id, title = "Geography", authorId = expectedAuthorId, questions = expectedQuestions, createdAt = clock.now),
+                savedQuiz
             )
-
-            assertEquals(HttpStatus.OK, response.statusCode)
-            val body = response.body ?: error("Response body was null")
-            val indexA = body.indexOf("Question A")
-            val indexB = body.indexOf("Question B")
-            val indexC = body.indexOf("Question C")
-            assertTrue(indexA in 0..<indexB && indexB in 0..<indexC)
         }
     }
 
     @Nested
-    @Order(2)
-    inner class `when the caller is not authenticated` {
+    inner class `given the caller is not authenticated` {
         @Test
         fun `should reject the request`() {
             val response = postwithoutLogin(quiz())
@@ -142,14 +189,16 @@ class PostCreateQuizIntegrationTest : AbstractPostgresIntegrationTest() {
     }
 
     @Nested
-    @Order(3)
-    inner class `when the title is invalid` {
+    inner class `given the title is invalid` {
         @Test
         fun `should reject a blank title`() {
             val response = post(quiz(title = ""))
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-            assertTrue((response.body ?: error("Response body was null")).contains("VALIDATION_ERROR"))
+            assertEquals(
+                errorJson(400, "VALIDATION_ERROR", "title: must not be blank"),
+                response.body ?: error("Response body was null")
+            )
         }
 
         @Test
@@ -157,35 +206,46 @@ class PostCreateQuizIntegrationTest : AbstractPostgresIntegrationTest() {
             val response = post(quiz(title = "a".repeat(76)))
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-            assertTrue((response.body ?: error("Response body was null")).contains("Title must be at most 75 characters"))
+            assertEquals(
+                errorJson(400, "VALIDATION_ERROR", "title: Title must be at most 75 characters"),
+                response.body ?: error("Response body was null")
+            )
         }
     }
 
     @Nested
-    @Order(4)
-    inner class `when the request body itself is malformed` {
+    inner class `given the request body itself is malformed` {
         @Test
         fun `should reject malformed JSON with 400`() {
+            // When
             val headers = HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON }
             val entity = HttpEntity("""{"title":"T","questions":[{"text":"Q",}]}""", headers)
+
+            // Then
             val response = restTemplate
                 .withBasicAuth(email, password)
                 .postForEntity("/api/quizzes", entity, String::class.java)
 
+            // Expect
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-            assertTrue((response.body ?: error("Response body was null")).contains("MALFORMED_REQUEST"))
+            assertEquals(
+                errorJson(400, "MALFORMED_REQUEST", "Request body could not be parsed"),
+                response.body ?: error("Response body was null")
+            )
         }
     }
 
     @Nested
-    @Order(5)
-    inner class `when a question's answer is invalid` {
+    inner class `given a question's answer is invalid` {
         @Test
         fun `should reject a null answer field`() {
             val response = post("""{"title":"T","questions":[{"text":"Q","options":["a","b"],"answer":null}]}""")
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-            assertTrue((response.body ?: error("Response body was null")).contains("MALFORMED_REQUEST"))
+            assertEquals(
+                errorJson(400, "MALFORMED_REQUEST", "Request body could not be parsed"),
+                response.body ?: error("Response body was null")
+            )
         }
 
         @Test
@@ -193,7 +253,10 @@ class PostCreateQuizIntegrationTest : AbstractPostgresIntegrationTest() {
             val response = post(quiz(questions = listOf(question(answer = 9))))
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-            assertTrue((response.body ?: error("Response body was null")).contains("INVALID_ANSWER"))
+            assertEquals(
+                errorJson(400, "INVALID_QUIZ", "Question 0 answer index 9 is out of range for 2 option(s)"),
+                response.body ?: error("Response body was null")
+            )
         }
 
         @Test
@@ -201,19 +264,24 @@ class PostCreateQuizIntegrationTest : AbstractPostgresIntegrationTest() {
             val response = post("""{"title":"T","questions":[{"text":"Q","options":["a","b"]}]}""")
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-            assertTrue((response.body ?: error("Response body was null")).contains("MALFORMED_REQUEST"))
+            assertEquals(
+                errorJson(400, "MALFORMED_REQUEST", "Request body could not be parsed"),
+                response.body ?: error("Response body was null")
+            )
         }
     }
 
     @Nested
-    @Order(6)
-    inner class `when a question's answer-options are invalid` {
+    inner class `given a question's answer-options are invalid` {
         @Test
         fun `should reject an answer-option longer than 50 characters`() {
             val response = post(quiz(questions = listOf(question(options = listOf("a".repeat(51), "b")))))
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-            assertTrue((response.body ?: error("Response body was null")).contains("Each option must be at most 50 characters"))
+            assertEquals(
+                errorJson(400, "VALIDATION_ERROR", "questions[0].options: Each option must be at most 50 characters"),
+                response.body ?: error("Response body was null")
+            )
         }
 
         @Test
@@ -221,39 +289,38 @@ class PostCreateQuizIntegrationTest : AbstractPostgresIntegrationTest() {
             val response = post(quiz(questions = listOf(question(options = listOf("only-one")))))
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-            assertTrue((response.body ?: error("Response body was null")).contains("There must be at least 2 answer options"))
+            assertEquals(
+                errorJson(400, "VALIDATION_ERROR", "questions[0].options: There must be at least 2 answer options"),
+                response.body ?: error("Response body was null")
+            )
         }
     }
 
     @Nested
-    @Order(7)
-    inner class `when the number of questions is invalid` {
-        @Test
-        fun `should reject more than 7 questions`() {
-            val response = post(quiz(questions = List(8) { question() }))
-
-            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-            assertTrue((response.body ?: error("Response body was null")).contains("Quiz must have at least 1 and at most 7 questions"))
-        }
-
+    inner class `given the number of questions is invalid` {
         @Test
         fun `should reject an empty questions list`() {
             val response = post(quiz(questions = emptyList()))
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-            assertTrue((response.body ?: error("Response body was null")).contains("Quiz must have at least 1 and at most 7 questions"))
+            assertEquals(
+                errorJson(400, "INVALID_QUIZ", "Quiz must have at least one question"),
+                response.body ?: error("Response body was null")
+            )
         }
     }
 
     @Nested
-    @Order(8)
-    inner class `when a question's text is invalid` {
+    inner class `given a question's text is invalid` {
         @Test
         fun `should reject blank question text`() {
             val response = post(quiz(questions = listOf(question(text = ""))))
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-            assertTrue((response.body ?: error("Response body was null")).contains("VALIDATION_ERROR"))
+            assertEquals(
+                errorJson(400, "VALIDATION_ERROR", "questions[0].text: must not be blank"),
+                response.body ?: error("Response body was null")
+            )
         }
 
         @Test
@@ -261,7 +328,10 @@ class PostCreateQuizIntegrationTest : AbstractPostgresIntegrationTest() {
             val response = post(quiz(questions = listOf(question(text = "a".repeat(101)))))
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-            assertTrue((response.body ?: error("Response body was null")).contains("Question text must be at most 100 characters"))
+            assertEquals(
+                errorJson(400, "VALIDATION_ERROR", "questions[0].text: Question text must be at most 100 characters"),
+                response.body ?: error("Response body was null")
+            )
         }
     }
 }
