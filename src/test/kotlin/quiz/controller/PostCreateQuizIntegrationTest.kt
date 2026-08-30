@@ -154,14 +154,14 @@ class PostCreateQuizIntegrationTest {
     inner class `given the quiz is valid` {
         @Test
         fun `should save the quiz in quizRepository and return it as html-response`() {
-            // When
+            // when
             val id = idGenerator.id
             val questions = listOf(question(text = "Capital of France?", options = listOf("Paris", "Berlin"), answer = 0))
 
-            // Then
+            // then
             val response = post(quiz(title = "Geography", questions = questions))
 
-            // Expect
+            // expect
             assertEquals(HttpStatus.OK, response.statusCode)
             val body = response.body
             assertNotNull(body)
@@ -217,16 +217,16 @@ class PostCreateQuizIntegrationTest {
     inner class `given the request body itself is malformed` {
         @Test
         fun `should reject malformed JSON with 400`() {
-            // When
+            // when
             val headers = HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON }
             val entity = HttpEntity("""{"title":"T","questions":[{"text":"Q",}]}""", headers)
 
-            // Then
+            // then
             val response = restTemplate
                 .withBasicAuth(email, password)
                 .postForEntity("/api/quizzes", entity, String::class.java)
 
-            // Expect
+            // expect
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
             assertEquals(
                 errorJson(400, "MALFORMED_REQUEST", "Request body could not be parsed"),
@@ -305,6 +305,17 @@ class PostCreateQuizIntegrationTest {
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
             assertEquals(
                 errorJson(400, "INVALID_QUIZ", "Quiz must have at least one question"),
+                response.body ?: error("Response body was null")
+            )
+        }
+
+        @Test
+        fun `should reject more than 7 questions`() {
+            val response = post(quiz(questions = List(8) { question() }))
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            assertEquals(
+                errorJson(400, "INVALID_REQUEST", "Quiz must have between 1 and 7 questions"),
                 response.body ?: error("Response body was null")
             )
         }

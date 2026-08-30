@@ -26,7 +26,7 @@ class QuizRepositoryImpl(
             .orElse(null)
 
     override fun findAll(pageNumber: Int, pageSize: Int): PagedResult<Quiz> =
-        jpaRepository.findAllByOrderByCreatedAt(PageRequest.of(pageNumber, pageSize))
+        jpaRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(pageNumber, pageSize))
             .map(mapper::toDomain)
             .toPagedResult()
 

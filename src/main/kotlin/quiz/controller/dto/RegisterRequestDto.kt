@@ -15,7 +15,7 @@ data class RegisterRequestDto(
 
     @field:NotBlank
     @field:NotNull
-    @field:Size(min = 5, message = "Password must be at least 5 characters long")
+    @field:Size(min = 8, message = "Password must be at least 8 characters long")
     @field:Schema(example = "p@ssW0rd")
     val password: String
 )

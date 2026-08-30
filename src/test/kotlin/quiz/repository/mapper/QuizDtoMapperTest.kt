@@ -20,7 +20,7 @@ class QuizDtoMapperTest {
     }
 
     @Test
-    fun `toDto generates a distinct id per question and preserves order`() {
+    fun `toDto generates a distinct id per question`() {
         val quiz = Quiz(
             id = "quiz-1",
             title = "Geography",
@@ -41,7 +41,7 @@ class QuizDtoMapperTest {
     }
 
     @Test
-    fun `toDomain drops question id and preserves order`() {
+    fun `toDomain drops question id`() {
         val quizDto = QuizEntity(
             id = "quiz-1",
             title = "Geography",

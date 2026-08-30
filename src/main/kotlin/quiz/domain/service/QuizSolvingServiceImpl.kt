@@ -26,6 +26,7 @@ class QuizSolvingServiceImpl(
                 "Expected ${quiz.questions.size} answer(s), got ${answers.size}"
             )
         }
+        // Since the quizzes are small, it's okay to require all answers to be correct.
         val allCorrect = quiz.questions.indices.all { index -> answers[index] == quiz.questions[index].answer }
         if (!allCorrect) {
             return AnswerResult(success = false, feedback = "Wrong answer(s)! Please, try again.")
