@@ -1,4 +1,4 @@
-package quiz.domain.response
+package quiz.domain.model
 
 data class PagedResult<T>(
     val content: List<T>,

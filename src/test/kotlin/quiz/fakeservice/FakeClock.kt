@@ -2,7 +2,7 @@ package quiz.fakeservice
 
 import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Service
-import quiz.domain.Clock
+import quiz.domain.repository.Clock
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 

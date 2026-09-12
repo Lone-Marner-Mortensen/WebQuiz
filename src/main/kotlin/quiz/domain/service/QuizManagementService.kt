@@ -1,6 +1,7 @@
 package quiz.domain.service
 
-import quiz.domain.response.PagedResult
+import quiz.domain.model.PagedResult
+import quiz.domain.model.QuestionDraft
 import quiz.domain.model.Quiz
 
 interface QuizManagementService {

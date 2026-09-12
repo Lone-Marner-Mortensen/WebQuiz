@@ -10,6 +10,7 @@ import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
+import quiz.infrastructure.security.UserDetailsServiceAdapter
 
 @Configuration
 @EnableWebSecurity
@@ -19,9 +20,9 @@ class SecurityConfig(private val userDetailsService: UserDetailsServiceAdapter) 
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
 
     @Bean
-    fun authenticationProvider(): AuthenticationProvider {
+    fun authenticationProvider(passwordEncoder: PasswordEncoder): AuthenticationProvider {
         val provider = DaoAuthenticationProvider(userDetailsService)
-        provider.setPasswordEncoder(passwordEncoder())
+        provider.setPasswordEncoder(passwordEncoder)
         return provider
     }
 

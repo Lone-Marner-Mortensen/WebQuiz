@@ -2,7 +2,7 @@ package quiz.repository
 
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Repository
-import quiz.domain.response.PagedResult
+import quiz.domain.model.PagedResult
 import quiz.domain.model.QuizCompletion
 import quiz.domain.repository.QuizCompletionRepository
 import quiz.repository.jpa.adapter.QuizCompletionEntityRepository

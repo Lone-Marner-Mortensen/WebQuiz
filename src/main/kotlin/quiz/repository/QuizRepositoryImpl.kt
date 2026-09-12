@@ -2,7 +2,8 @@ package quiz.repository
 
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Repository
-import quiz.domain.response.PagedResult
+import org.springframework.transaction.annotation.Transactional
+import quiz.domain.model.PagedResult
 import quiz.domain.model.Quiz
 import quiz.domain.repository.QuizRepository
 import quiz.repository.jpa.adapter.QuizEntityRepository
@@ -20,11 +21,17 @@ class QuizRepositoryImpl(
             .let(jpaRepository::save)
             .let(mapper::toDomain)
 
+    // `@Transactional` keeps the Hibernate session open while `mapper.toDomain` walks the lazy
+    // `questions` collection; without it, the session (and thus the collection) is closed by the
+    // time the mapping runs, since `jpaRepository.findById`/`findAllByOrderByCreatedAtDesc` each
+    // open and close their own transaction.
+    @Transactional(readOnly = true)
     override fun findById(id: String): Quiz? =
         jpaRepository.findById(id)
             .map(mapper::toDomain)
             .orElse(null)
 
+    @Transactional(readOnly = true)
     override fun findAll(pageNumber: Int, pageSize: Int): PagedResult<Quiz> =
         jpaRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(pageNumber, pageSize))
             .map(mapper::toDomain)

@@ -3,7 +3,7 @@ package quiz.repository.mapper
 import org.mapstruct.InjectionStrategy
 import org.mapstruct.Mapper
 import org.springframework.beans.factory.annotation.Autowired
-import quiz.domain.IdGenerator
+import quiz.domain.repository.IdGenerator
 import quiz.domain.model.Question
 import quiz.domain.model.Quiz
 import quiz.repository.entity.QuestionEntity

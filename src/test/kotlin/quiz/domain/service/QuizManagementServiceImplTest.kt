@@ -7,6 +7,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import quiz.domain.model.Question
+import quiz.domain.model.QuestionDraft
 import quiz.domain.model.Quiz
 import quiz.domain.exception.InvalidQuizException
 import quiz.domain.exception.QuizAuthorMismatchException
@@ -17,8 +18,6 @@ import quiz.fakeservice.FakeQuizRepository
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
-// JUnit 5 creates a new instance of this class per @Test, so these properties give every test its
-// own fresh fake repository and no state leaks between tests.
 class QuizManagementServiceImplTest {
 
     private val idGenerator = FakeIdGenerator(id = "generated-id")
@@ -158,13 +157,13 @@ class QuizManagementServiceImplTest {
         @Test
         fun `orders quizzes by most recently created first`() {
             // Insertion order: middle, oldest, newest.
-            // Retrieval order:  newest, middle, oldest.
             quizRepository.save(quizWithCreatedAt("quiz-middle", OffsetDateTime.of(2025, 2, 1, 0, 0, 0, 0, ZoneOffset.UTC)))
             quizRepository.save(quizWithCreatedAt("quiz-oldest", OffsetDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)))
             quizRepository.save(quizWithCreatedAt("quiz-newest", OffsetDateTime.of(2025, 3, 1, 0, 0, 0, 0, ZoneOffset.UTC)))
 
             val result = service.getAllQuizzes(pageNumber = 0, pageSize = 10)
 
+            // Retrieval order: newest, middle, oldest.
             assertEquals(listOf("quiz-newest", "quiz-middle", "quiz-oldest"), result.content.map { it.id })
         }
 

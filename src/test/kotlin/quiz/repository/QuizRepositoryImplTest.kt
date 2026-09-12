@@ -95,9 +95,6 @@ class QuizRepositoryImplTest {
             createdAt = createdAt
         )
 
-    // Saved directly via the JPA entity repository with a hand-picked question id, so that
-    // multiple quizzes can be set up in one test without colliding on FakeIdGenerator's fixed id,
-    // which QuizRepositoryImpl.save uses to mint question ids.
     private fun saveQuizEntity(id: String, authorId: String, createdAt: OffsetDateTime): QuizEntity {
         val quizEntity = QuizEntity(
             id = id,

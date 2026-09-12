@@ -1,17 +1,19 @@
 package quiz.domain.service
 
 import org.springframework.stereotype.Service
-import quiz.domain.Clock
-import quiz.domain.IdGenerator
+import org.springframework.transaction.annotation.Transactional
+import quiz.domain.repository.Clock
+import quiz.domain.repository.IdGenerator
 import quiz.domain.exception.InvalidAnswerException
 import quiz.domain.exception.QuizNotFoundException
 import quiz.domain.model.QuizCompletion
-import quiz.domain.response.AnswerResult
-import quiz.domain.response.PagedResult
+import quiz.domain.model.AnswerResult
+import quiz.domain.model.PagedResult
 import quiz.domain.repository.QuizCompletionRepository
 import quiz.domain.repository.QuizRepository
 
 @Service
+@Transactional
 class QuizSolvingServiceImpl(
     private val idGenerator: IdGenerator,
     private val clock: Clock,
@@ -45,6 +47,7 @@ class QuizSolvingServiceImpl(
         return AnswerResult(success = true, feedback = "Congratulations, you're right!")
     }
 
+    @Transactional(readOnly = true)
     override fun getCompletions(userEmail: String, pageNumber: Int, pageSize: Int): PagedResult<QuizCompletion> =
         quizCompletionRepository.findByUserIdOrderByCompletedAtDesc(userEmail, pageNumber, pageSize)
 }

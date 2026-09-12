@@ -10,7 +10,7 @@ import quiz.domain.model.QuizCompletion
 import quiz.domain.exception.InvalidAnswerException
 import quiz.domain.exception.QuizNotFoundException
 import quiz.domain.repository.QuizCompletionRepository
-import quiz.domain.response.PagedResult
+import quiz.domain.model.PagedResult
 import quiz.fakeservice.FakeClock
 import quiz.fakeservice.FakeIdGenerator
 import quiz.fakeservice.FakeQuizRepository
@@ -28,8 +28,6 @@ private class FakeQuizCompletionRepository : QuizCompletionRepository {
     override fun existsByQuizIdAndUserId(quizId: String, userId: String): Boolean =
         completions.any { it.quizId == quizId && it.userId == userId }
 
-    // Matches QuizCompletionRepositoryImpl.findByUserIdOrderByCompletedAtDesc, which orders by
-    // completedAt descending (most recent first).
     override fun findByUserIdOrderByCompletedAtDesc(userId: String, pageNumber: Int, pageSize: Int): PagedResult<QuizCompletion> {
         val sorted = completions.filter { it.userId == userId }.sortedByDescending { it.completedAt }
         val content = sorted.drop(pageNumber * pageSize).take(pageSize)
@@ -43,8 +41,6 @@ private class FakeQuizCompletionRepository : QuizCompletionRepository {
     }
 }
 
-// JUnit 5 creates a new instance of this class per @Test, so these properties give every test its
-// own fresh fake repositories and no state leaks between tests.
 class QuizSolvingServiceImplTest {
 
     private val idGenerator = FakeIdGenerator(id = "generated-id")
@@ -131,7 +127,6 @@ class QuizSolvingServiceImplTest {
         fun `orders completions by most recently completed first`() {
             quizRepository.save(twoQuestionQuiz)
             // Insertion order: middle, oldest, newest.
-            // Retrieval order:  newest, middle, oldest.
             quizCompletionRepository.save(
                 QuizCompletion(id = "completion-middle", quizId = "quiz-1", userId = solverEmail, completedAt = OffsetDateTime.of(2025, 2, 1, 0, 0, 0, 0, ZoneOffset.UTC))
             )
@@ -144,6 +139,7 @@ class QuizSolvingServiceImplTest {
 
             val result = service.getCompletions(solverEmail, pageNumber = 0, pageSize = 10)
 
+            // Retrieval order: newest, middle, oldest.
             assertEquals(
                 listOf("completion-newest", "completion-middle", "completion-oldest"),
                 result.content.map { it.id }

@@ -1,14 +1,15 @@
 package quiz.domain.service
 
 import org.springframework.stereotype.Service
-import quiz.domain.Clock
-import quiz.domain.IdGenerator
+import quiz.domain.repository.Clock
+import quiz.domain.repository.IdGenerator
 import quiz.domain.exception.InvalidQuizException
 import quiz.domain.exception.QuizAuthorMismatchException
 import quiz.domain.exception.QuizNotFoundException
+import quiz.domain.model.QuestionDraft
 import quiz.domain.model.Quiz
 import quiz.domain.model.Question
-import quiz.domain.response.PagedResult
+import quiz.domain.model.PagedResult
 import quiz.domain.repository.QuizRepository
 
 @Service

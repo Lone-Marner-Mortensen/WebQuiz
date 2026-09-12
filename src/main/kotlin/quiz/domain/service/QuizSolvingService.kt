@@ -1,7 +1,7 @@
 package quiz.domain.service
 
-import quiz.domain.response.AnswerResult
-import quiz.domain.response.PagedResult
+import quiz.domain.model.AnswerResult
+import quiz.domain.model.PagedResult
 import quiz.domain.model.QuizCompletion
 
 interface QuizSolvingService {

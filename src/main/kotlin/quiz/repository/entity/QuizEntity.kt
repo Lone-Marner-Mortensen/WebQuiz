@@ -25,7 +25,7 @@ class QuizEntity(
     @Column(name = "author_id", nullable = false)
     val authorId: String,
 
-    @OneToMany(mappedBy = "quiz", cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE], fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "quiz", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
     @OrderColumn(name = "question_order")
     @Fetch(value = FetchMode.SUBSELECT)
     var questions: List<QuestionEntity> = emptyList(),

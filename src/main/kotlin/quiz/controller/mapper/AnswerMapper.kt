@@ -2,7 +2,7 @@ package quiz.controller.mapper
 
 import org.mapstruct.Mapper
 import quiz.controller.dto.AnswerResultDto
-import quiz.domain.response.AnswerResult
+import quiz.domain.model.AnswerResult
 
 @Mapper(componentModel = "spring")
 interface AnswerMapper {

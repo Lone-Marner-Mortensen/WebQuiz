@@ -2,7 +2,7 @@ package quiz.repository.mapper
 
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
-import quiz.domain.IdGenerator
+import quiz.domain.repository.IdGenerator
 import quiz.domain.model.Question
 import quiz.domain.model.Quiz
 import quiz.repository.entity.QuestionEntity
@@ -20,7 +20,7 @@ class QuizDtoMapperTest {
     }
 
     @Test
-    fun `toDto generates a distinct id per question`() {
+    fun `toDto generates a distinct question-id per question`() {
         val quiz = Quiz(
             id = "quiz-1",
             title = "Geography",
@@ -41,7 +41,7 @@ class QuizDtoMapperTest {
     }
 
     @Test
-    fun `toDomain drops question id`() {
+    fun `toDomain drops question-id`() {
         val quizDto = QuizEntity(
             id = "quiz-1",
             title = "Geography",

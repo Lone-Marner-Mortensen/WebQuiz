@@ -1,7 +1,7 @@
 package quiz.repository.mapper
 
 import org.springframework.data.domain.Page
-import quiz.domain.response.PagedResult
+import quiz.domain.model.PagedResult
 
 fun <T : Any> Page<T>.toPagedResult(): PagedResult<T> {
     return PagedResult(

@@ -1,4 +1,4 @@
-package quiz.error
+package quiz.controller.error
 
 data class ErrorResponse(
     val status: Int,

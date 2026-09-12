@@ -202,7 +202,7 @@ class GetCompletedQuizzesIntegrationTest {
             val response = getCompletedQuizzes()
 
             assertEquals(HttpStatus.OK, response.statusCode)
-            // Retrieval order:  newest, middle, oldest.
+            // Retrieval order: newest, middle, oldest.
             val ids = contentOf(response).map { it.jsonObject["id"]?.jsonPrimitive?.content }
             assertEquals(listOf(newestQuiz.id, middleQuiz.id, oldestQuiz.id), ids)
         }

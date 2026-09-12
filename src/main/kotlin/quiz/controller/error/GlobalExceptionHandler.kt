@@ -1,4 +1,4 @@
-package quiz.error
+package quiz.controller.error
 
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory

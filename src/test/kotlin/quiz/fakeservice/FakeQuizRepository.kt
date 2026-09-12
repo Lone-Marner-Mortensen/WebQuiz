@@ -2,7 +2,7 @@ package quiz.fakeservice
 
 import quiz.domain.model.Quiz
 import quiz.domain.repository.QuizRepository
-import quiz.domain.response.PagedResult
+import quiz.domain.model.PagedResult
 
 class FakeQuizRepository : QuizRepository {
     private val quizzesById = mutableMapOf<String, Quiz>()
@@ -14,7 +14,6 @@ class FakeQuizRepository : QuizRepository {
 
     override fun findById(id: String): Quiz? = quizzesById[id]
 
-    // Matches QuizRepositoryImpl.findAll, which orders by createdAt descending (newest first).
     override fun findAll(pageNumber: Int, pageSize: Int): PagedResult<Quiz> {
         val sorted = quizzesById.values.sortedByDescending { it.createdAt }
         val content = sorted.drop(pageNumber * pageSize).take(pageSize)

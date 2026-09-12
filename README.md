@@ -35,8 +35,8 @@ This is a backend application providing:
 
 | Layer                           | Technology |
 |---------------------------------|------------|
-| Language                        | Kotlin 2.2.20 |
-| Framework                       | Spring Boot 4.1 |
+| Language                        | Kotlin 2.4.20 |
+| Framework                       | Spring Boot 4.1.1 |
 | JDK                             | Java 21 |
 | Database                        | PostgreSQL 16, via Docker Compose |
 | Schema migrations               | Flyway |

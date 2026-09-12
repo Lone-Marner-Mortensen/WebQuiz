@@ -5,8 +5,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.validation.Valid
 import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.Authentication
-import org.springframework.security.core.userdetails.UsernameNotFoundException
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -24,10 +23,10 @@ import quiz.controller.mapper.AnswerMapper
 import quiz.controller.mapper.CompletionMapper
 import quiz.controller.mapper.QuizMapper
 import quiz.controller.mapper.toPage
-import quiz.domain.repository.UserRepository
-import quiz.domain.service.QuestionDraft
+import quiz.domain.model.QuestionDraft
 import quiz.domain.service.QuizManagementService
 import quiz.domain.service.QuizSolvingService
+import quiz.infrastructure.security.AuthenticatedUser
 
 private const val PAGE_SIZE = 10
 
@@ -38,24 +37,18 @@ class QuizController(
     private val quizSolvingService: QuizSolvingService,
     private val quizMapper: QuizMapper,
     private val completionMapper: CompletionMapper,
-    private val answerMapper: AnswerMapper,
-    private val userRepository: UserRepository
+    private val answerMapper: AnswerMapper
 ) {
-
-    private fun userIdFor(authentication: Authentication): String =
-        userRepository.findByEmail(authentication.name)
-            ?.id
-            ?: throw UsernameNotFoundException("User not found: ${authentication.name}")
 
     @PostMapping
     fun createQuiz(
         @Valid @RequestBody request: CreateQuizRequestDto,
-        authentication: Authentication
+        @AuthenticationPrincipal user: AuthenticatedUser
     ): CreateQuizResponseDto {
         val quiz = quizManagementService.createQuiz(
             title = request.title,
-            author = userIdFor(authentication),
-            questions = (request.questions ?: emptyList()).map {
+            author = user.id,
+            questions = request.questions.map {
                 QuestionDraft(
                     text = it.text,
                     options = it.options,
@@ -81,9 +74,9 @@ class QuizController(
     @GetMapping("/completed")
     fun getCompletedQuizzes(
         @RequestParam(defaultValue = "0") page: Int,
-        authentication: Authentication
+        @AuthenticationPrincipal user: AuthenticatedUser
     ): Page<QuizCompletionResponseDto> {
-        return quizSolvingService.getCompletions(userIdFor(authentication), page, PAGE_SIZE)
+        return quizSolvingService.getCompletions(user.id, page, PAGE_SIZE)
             .toPage()
             .map { completionMapper.toResponseDto(it) }
     }
@@ -95,10 +88,10 @@ class QuizController(
     @PostMapping("/{id}/solve")
     fun solveQuiz(
         @PathVariable id: String,
-        @RequestBody request: SolveQuizRequestDto,
-        authentication: Authentication
+        @Valid @RequestBody request: SolveQuizRequestDto,
+        @AuthenticationPrincipal user: AuthenticatedUser
     ): AnswerResultDto =
-        answerMapper.toResponseDto(quizSolvingService.solveQuiz(id, request.answers, userIdFor(authentication)))
+        answerMapper.toResponseDto(quizSolvingService.solveQuiz(id, request.answers, user.id))
 
     @ApiResponses(
         ApiResponse(responseCode = "204", description = "Quiz deleted"),
@@ -106,8 +99,8 @@ class QuizController(
         ApiResponse(responseCode = "404", description = "No quiz with this id")
     )
     @DeleteMapping("/{id}")
-    fun deleteQuiz(@PathVariable id: String, authentication: Authentication): ResponseEntity<Void> {
-        quizManagementService.deleteQuiz(id, userIdFor(authentication))
+    fun deleteQuiz(@PathVariable id: String, @AuthenticationPrincipal user: AuthenticatedUser): ResponseEntity<Void> {
+        quizManagementService.deleteQuiz(id, user.id)
         return ResponseEntity.noContent().build()
     }
 }

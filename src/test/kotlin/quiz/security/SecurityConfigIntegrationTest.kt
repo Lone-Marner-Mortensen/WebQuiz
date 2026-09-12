@@ -22,7 +22,7 @@ import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.PostgreSQLContainer
 import java.util.UUID
 import kotlin.test.assertEquals
-import quiz.domain.IdGenerator
+import quiz.domain.repository.IdGenerator
 import quiz.domain.model.User
 import quiz.domain.repository.QuizRepository
 import quiz.domain.repository.UserRepository

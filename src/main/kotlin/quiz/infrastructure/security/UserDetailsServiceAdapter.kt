@@ -1,6 +1,5 @@
-package quiz.security
+package quiz.infrastructure.security
 
-import org.springframework.security.core.userdetails.User as SpringUser
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
@@ -13,9 +12,10 @@ class UserDetailsServiceAdapter(private val userRepository: UserRepository) : Us
     override fun loadUserByUsername(username: String): UserDetails {
         val user = userRepository.findByEmail(username)
             ?: throw UsernameNotFoundException("User not found: $username")
-        return SpringUser.builder()
-            .username(user.email)
-            .password(user.password)
-            .build()
+        return AuthenticatedUser(
+            id = user.id,
+            username = user.email,
+            password = user.password
+        )
     }
 }

@@ -2,7 +2,7 @@ package quiz.fakeservice
 
 import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Service
-import quiz.domain.IdGenerator
+import quiz.domain.repository.IdGenerator
 
 @Service
 @Primary
